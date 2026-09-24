@@ -177,12 +177,10 @@ endif()
 
 # ASI defaults: install into the CMake prefix (the ports tree) with libs in lib/,
 # not OpenSSL's /usr/local or C:/Program Files default and linux-x86_64's lib64/.
-# On Linux read the host CA bundle and openssl.cnf, not the empty /usr/local/ssl.
+# The openssldir (openssl.cnf, default CA store) is ssl/ inside the port too - a
+# relative --openssldir is taken relative to --prefix - never a host directory.
 cmake_path(NATIVE_PATH CMAKE_INSTALL_PREFIX OPENSSL_INSTALL_PREFIX)
-list(APPEND OPENSSL_CONFIGURE_OPTIONS --prefix=${OPENSSL_INSTALL_PREFIX} --libdir=lib)
-if(UNIX AND NOT APPLE)
-    list(APPEND OPENSSL_CONFIGURE_OPTIONS --openssldir=/usr/lib/ssl)
-endif()
+list(APPEND OPENSSL_CONFIGURE_OPTIONS --prefix=${OPENSSL_INSTALL_PREFIX} --libdir=lib --openssldir=ssl)
 
 list(SORT OPENSSL_CONFIGURE_OPTIONS)
 list(REMOVE_DUPLICATES OPENSSL_CONFIGURE_OPTIONS)
