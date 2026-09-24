@@ -372,6 +372,11 @@ if(OPENSSL_INSTALL)
             COMMAND_ERROR_IS_FATAL ANY
         )"
     )
+
+    # ASI: make the exported shared OpenSSL::SSL carry OpenSSL::Crypto on Unix
+    if(UNIX AND BUILD_SHARED_LIBS)
+        install(SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FixOpenSSLConfig.cmake)
+    endif()
 endif()
 
 if(OPENSSL_INSTALL_CERT)
