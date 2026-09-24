@@ -87,7 +87,13 @@ foreach(patch IN LISTS OPENSSL_PATCH)
 endforeach()
 
 # Run vcvarsall.bat with target architecture
-set_vcvarsall_command(VCVARSALL_COMMAND)
+# ASI: skip it when a VS developer environment is already set (setup-env sets
+# VSCMD_VER, INCLUDE, LIB and cl on PATH); VsDevCmd.bat fails when re-run on top.
+if(DEFINED ENV{VSCMD_VER})
+    set(VCVARSALL_COMMAND "")
+else()
+    set_vcvarsall_command(VCVARSALL_COMMAND)
+endif()
 
 # Set environment variables for Android NDK
 if(ANDROID)
