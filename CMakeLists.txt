@@ -34,6 +34,7 @@ include(cmake/FetchOpenSSL.cmake)
 include(cmake/FindVcvarsall.cmake)
 
 # Custom options
+set(OPENSSL_TARGET_VERSION 3.5.8 CACHE STRING "OpenSSL release to build")
 option(OPENSSL_BUILD_VERBOSE "Enable verbose output from build" OFF)
 option(OPENSSL_CONFIGURE_VERBOSE "Enable verbose output from configuration" OFF)
 option(OPENSSL_ENABLE_PARALLEL "Build and test in parallel if possible" ON)
