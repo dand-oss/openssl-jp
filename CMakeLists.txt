@@ -183,13 +183,23 @@ cmake_path(NATIVE_PATH CMAKE_INSTALL_PREFIX OPENSSL_INSTALL_PREFIX)
 list(APPEND OPENSSL_CONFIGURE_OPTIONS --prefix=${OPENSSL_INSTALL_PREFIX} --libdir=lib --openssldir=ssl)
 
 # ASI Windows defaults:
-# - Configure needs a native Windows perl; msys2 perl is earlier on PATH and OpenSSL
-#   rejects it for MSVC builds. setup-env points ASV_STRAWBERRY_PERL_BIN at it.
+# - Configure needs a native Windows perl ($^O MSWin32, e.g. Strawberry Perl); OpenSSL
+#   rejects msys2 perl for MSVC builds, and msys2 perl is earlier on PATH. Take the
+#   first perl on PATH that is native.
 # - no-asm: the x64 assembly needs NASM; plain C is fast enough for database TLS.
 if(WIN32)
+    function(asv_native_windows_perl result candidate)
+        execute_process(
+            COMMAND "${candidate}" -e "print $^O"
+            OUTPUT_VARIABLE perl_os
+            RESULT_VARIABLE perl_rc
+        )
+        if(NOT perl_rc EQUAL 0 OR NOT perl_os STREQUAL "MSWin32")
+            set(${result} FALSE PARENT_SCOPE)
+        endif()
+    endfunction()
     find_program(OPENSSL_CONFIGURE_TOOL perl
-        PATHS "$ENV{ASV_STRAWBERRY_PERL_BIN}"
-        NO_DEFAULT_PATH
+        VALIDATOR asv_native_windows_perl
         REQUIRED
     )
     list(APPEND OPENSSL_CONFIGURE_OPTIONS no-asm)
