@@ -15,6 +15,9 @@ include(asv_cmake_defaults)
 asv_cmake_defaults( )
 ###############
 
+# ASI default
+option(BUILD_SHARED_LIBS "Enable shared library" ON)
+
 if(NOT PROJECT_IS_TOP_LEVEL)
     list(APPEND CMAKE_MESSAGE_INDENT "[${PROJECT_NAME}] ")
 endif()
