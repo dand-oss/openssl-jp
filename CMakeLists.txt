@@ -182,6 +182,19 @@ endif()
 cmake_path(NATIVE_PATH CMAKE_INSTALL_PREFIX OPENSSL_INSTALL_PREFIX)
 list(APPEND OPENSSL_CONFIGURE_OPTIONS --prefix=${OPENSSL_INSTALL_PREFIX} --libdir=lib --openssldir=ssl)
 
+# ASI Windows defaults:
+# - Configure needs a native Windows perl; msys2 perl is earlier on PATH and OpenSSL
+#   rejects it for MSVC builds. setup-env points ASV_STRAWBERRY_PERL_BIN at it.
+# - no-asm: the x64 assembly needs NASM; plain C is fast enough for database TLS.
+if(WIN32)
+    find_program(OPENSSL_CONFIGURE_TOOL perl
+        PATHS "$ENV{ASV_STRAWBERRY_PERL_BIN}"
+        NO_DEFAULT_PATH
+        REQUIRED
+    )
+    list(APPEND OPENSSL_CONFIGURE_OPTIONS no-asm)
+endif()
+
 list(SORT OPENSSL_CONFIGURE_OPTIONS)
 list(REMOVE_DUPLICATES OPENSSL_CONFIGURE_OPTIONS)
 list(PREPEND OPENSSL_CONFIGURE_OPTIONS ${OPENSSL_TARGET_PLATFORM})
