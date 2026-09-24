@@ -175,6 +175,15 @@ if(NOT BUILD_SHARED_LIBS)
     list(APPEND OPENSSL_CONFIGURE_OPTIONS no-shared)
 endif()
 
+# ASI defaults: install into the CMake prefix (the ports tree) with libs in lib/,
+# not OpenSSL's /usr/local or C:/Program Files default and linux-x86_64's lib64/.
+# On Linux read the host CA bundle and openssl.cnf, not the empty /usr/local/ssl.
+cmake_path(NATIVE_PATH CMAKE_INSTALL_PREFIX OPENSSL_INSTALL_PREFIX)
+list(APPEND OPENSSL_CONFIGURE_OPTIONS --prefix=${OPENSSL_INSTALL_PREFIX} --libdir=lib)
+if(UNIX AND NOT APPLE)
+    list(APPEND OPENSSL_CONFIGURE_OPTIONS --openssldir=/usr/lib/ssl)
+endif()
+
 list(SORT OPENSSL_CONFIGURE_OPTIONS)
 list(REMOVE_DUPLICATES OPENSSL_CONFIGURE_OPTIONS)
 list(PREPEND OPENSSL_CONFIGURE_OPTIONS ${OPENSSL_TARGET_PLATFORM})
@@ -360,6 +369,7 @@ if(OPENSSL_INSTALL)
         "execute_process(
             COMMAND ${OPENSSL_INSTALL_COMMAND}
             WORKING_DIRECTORY \"${openssl_BINARY_DIR}\"
+            COMMAND_ERROR_IS_FATAL ANY
         )"
     )
 endif()
