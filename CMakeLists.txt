@@ -378,7 +378,7 @@ set(OPENSSL_BUILD_OUTPUT
 add_custom_command(
     OUTPUT ${OPENSSL_BUILD_OUTPUT}
     COMMAND ${OPENSSL_BUILD_COMMAND}
-    DEPENDS ${OPENSSL_SOURCES}
+    DEPENDS ${OPENSSL_SOURCES} ${openssl_BINARY_DIR}/configdata.pm
     WORKING_DIRECTORY ${openssl_BINARY_DIR}
     VERBATIM
 )
@@ -404,9 +404,11 @@ endif()
 
 # Install OpenSSL
 if(OPENSSL_INSTALL)
-    set(OPENSSL_INSTALL_COMMAND "\"${OPENSSL_BUILD_TOOL}\" ${OPENSSL_INSTALL_TARGET}")
+    # Reuse the build tool options (-j N / /J N, -s / /S, /NOLOGO) so install does not run serially
+    list(JOIN OPENSSL_BUILD_OPTIONS " " _openssl_install_options)
+    set(OPENSSL_INSTALL_COMMAND "\"${OPENSSL_BUILD_TOOL}\" ${_openssl_install_options} ${OPENSSL_INSTALL_TARGET}")
 
-    if(MSVC)
+    if(MSVC AND NOT "/NOLOGO" IN_LIST OPENSSL_BUILD_OPTIONS)
         set(OPENSSL_INSTALL_COMMAND "${OPENSSL_INSTALL_COMMAND} /NOLOGO")
     endif()
 
