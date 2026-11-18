@@ -1,0 +1,79 @@
+diff -ru Configurations.orig/platform/Windows.pm src/Configurations/platform/Windows.pm
+--- a/Configurations/platform/Windows.pm	2026-11-18 09:12:12.473349872 +0700
++++ b/Configurations/platform/Windows.pm	2026-11-18 10:18:46.561160899 +0700
+@@ -25,6 +25,8 @@
+ sub resext              { '.res' }
+ sub shlibextimport      { '.lib' }
+ sub shlibvariant        { $target{shlib_variant} || '' }
++sub makedepcmd          { $disabled{makedepend} ? undef : $config{makedepcmd} }
++sub sharedlib_simple    { undef }
+ 
+ sub staticname {
+     # Non-installed libraries are *always* static, and their names remain
+diff -ru Configurations.orig/unix-Makefile.tmpl src/Configurations/unix-Makefile.tmpl
+--- a/Configurations/unix-Makefile.tmpl	2026-11-18 09:12:12.473349872 +0700
++++ b/Configurations/unix-Makefile.tmpl	2026-11-18 10:28:14.237253051 +0700
+@@ -10,7 +10,7 @@
+      our $makedep_scheme = $config{makedep_scheme};
+      our $makedepcmd = platform->makedepcmd();
+ 
+-     sub windowsdll { $config{target} =~ /^(?:Cygwin|mingw)/ }
++     sub windowsdll { $config{target} =~ /^(?:Cygwin|mingw|asv-VC-)/ }
+ 
+      # Shared AIX support is special. We put libcrypto[64].so.ver into
+      # libcrypto.a and use libcrypto_a.a as static one, unless using
+@@ -1794,9 +1794,12 @@
+       my %args = @_;
+       my @linkdirs = ();
+       my @linklibs = ();
++      my $msvcld = ($target{shared_target} // '') eq 'windows-shared';
+       foreach (@{$args{deps}}) {
+           if (platform->isstaticlib($_)) {
+               push @linklibs, platform->convertext($_);
++          } elsif ($msvcld) {
++              push @linklibs, platform->sharedlib_import($_);
+           } else {
+               my $d = "-L" . dirname($_);
+               my $l = basename($_);
+@@ -1897,6 +1900,16 @@
+ EOF
+           }
+       }
++      if ($msvcld) {
++          my $ldimp = defined $import ? " /implib:$import" : "";
++          my $lddef = join("", map { ' /def:'.$_ } @defs);
++          $recipe .= <<"EOF";
++$full: $fulldeps
++	$target{LD} \$(LIB_LDFLAGS) /out:$full$ldimp$lddef \\
++		$fullobjs \\
++		$linklibs\$(LIB_EX_LIBS)
++EOF
++      } else {
+       $recipe .= <<"EOF";
+ $full: $fulldeps
+ 	\$(CC) \$(LIB_CFLAGS) $linkflags\$(LIB_LDFLAGS)$shared_soname$shared_imp \\
+@@ -1904,6 +1917,7 @@
+ 		$fullobjs \\
+ 		$linklibs \$(LIB_EX_LIBS)
+ EOF
++      }
+       if (windowsdll()) {
+           $recipe .= <<"EOF";
+ 	rm -f apps/$full
+@@ -1974,11 +1988,16 @@
+       my @objs = map { platform->obj($_) } @{$args{objs}};
+       my $deps = join(" \\\n" . ' ' x (length($lib) + 2),
+                       fill_lines(' ', $COLUMNS - length($lib) - 2, @objs));
++      my @objs_all = @objs;
+       my $max_per_call = 500;
+       my @objs_grouped;
+       push @objs_grouped, join(" ", splice @objs, 0, $max_per_call) while @objs;
+       my $fill_lib =
+           join("\n\t", (map { "\$(AR) \$(ARFLAGS) $lib $_" } @objs_grouped));
++      if (($target{shared_target} // '') eq 'windows-shared') {
++          # llvm-lib needs /OUT: and replaces the archive on every call
++          $fill_lib = "\$(AR) \$(ARFLAGS) /OUT:$lib " . join(" ", @objs_all);
++      }
+       return <<"EOF";
+ $lib: $deps
+ 	\$(RM) $lib

@@ -87,7 +87,8 @@ function(apply_ccache FILE)
         file(READ ${FILE} MAKEFILE)
         string(REPLACE "\nCC=" "\nCC=ccache " MAKEFILE "${MAKEFILE}")
 
-        if(MSVC)
+        # ASI winx: the unix-style Makefile has no /Zi /Fd flags to strip
+        if(MSVC AND NOT ASV_WINX)
             string(REPLACE "/Zi /Fdossl_static.pdb " "" MAKEFILE "${MAKEFILE}")
             string(REPLACE "/Zi /Fddso.pdb " "" MAKEFILE "${MAKEFILE}")
             string(REPLACE "/Zi /Fdapp.pdb " "" MAKEFILE "${MAKEFILE}")
